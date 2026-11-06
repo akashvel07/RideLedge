@@ -1,7 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { generateUUID } from '@/lib/utils/uuid';
+
+// Dedicated single owner account for the application
+export const OWNER_USER_ID = '4301fe1d-88cc-4782-8aa9-2a334637dd7e';
+export const OWNER_EMAIL = 'owner@rideledger.app';
+export const OWNER_PASSWORD = 'rideledger-owner-secret-pass-2025';
 
 export interface AuthUser {
   id: string;
@@ -10,7 +14,7 @@ export interface AuthUser {
 }
 
 interface AuthContextType {
-  user: AuthUser | null;
+  user: AuthUser;
   loading: boolean;
   isConfigured: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: string | null }>;
@@ -20,10 +24,16 @@ interface AuthContextType {
   enableGuestMode: () => void;
 }
 
+const defaultOwnerUser: AuthUser = {
+  id: OWNER_USER_ID,
+  email: OWNER_EMAIL,
+  fullName: 'RideLedger Rider',
+};
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<AuthUser>(defaultOwnerUser);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -31,15 +41,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (isSupabaseConfigured && supabase) {
         try {
           const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
+          if (session?.user && session.user.id === OWNER_USER_ID) {
             setUser(mapSupabaseUser(session.user));
           } else {
-            // Check for locally stored guest session
-            const savedUser = localStorage.getItem('rideledger_offline_user');
-            if (savedUser) {
-              setUser(JSON.parse(savedUser));
+            // Silently authenticate as single owner across all devices
+            const { data: signData, error } = await supabase.auth.signInWithPassword({
+              email: OWNER_EMAIL,
+              password: OWNER_PASSWORD,
+            });
+            if (!error && signData.user) {
+              setUser(mapSupabaseUser(signData.user));
             } else {
-              setUser(null);
+              setUser(defaultOwnerUser);
             }
           }
 
@@ -47,36 +60,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (session?.user) {
               setUser(mapSupabaseUser(session.user));
             } else {
-              const savedUser = localStorage.getItem('rideledger_offline_user');
-              if (savedUser) {
-                setUser(JSON.parse(savedUser));
-              } else {
-                setUser(null);
-              }
+              setUser(defaultOwnerUser);
             }
           });
 
           return () => {
             subscription.unsubscribe();
           };
-        } catch {
-          const savedUser = localStorage.getItem('rideledger_offline_user');
-          if (savedUser) {
-            setUser(JSON.parse(savedUser));
-          } else {
-            setUser(null);
-          }
+        } catch (err) {
+          console.warn('Auto-auth notice:', err);
+          setUser(defaultOwnerUser);
         } finally {
           setLoading(false);
         }
       } else {
-        // Local-first mode when Supabase credentials are not provided
-        const savedUser = localStorage.getItem('rideledger_offline_user');
-        if (savedUser) {
-          setUser(JSON.parse(savedUser));
-        } else {
-          setUser(null);
-        }
+        setUser(defaultOwnerUser);
         setLoading(false);
       }
     }
@@ -86,116 +84,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const mapSupabaseUser = (u: User): AuthUser => ({
     id: u.id,
-    email: u.email || '',
-    fullName: u.user_metadata?.full_name || null,
+    email: u.email || OWNER_EMAIL,
+    fullName: u.user_metadata?.full_name || 'RideLedger Rider',
   });
 
-  const signUp = async (email: string, password: string, fullName: string) => {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { full_name: fullName },
-          },
-        });
-        if (error) return { error: error.message };
-
-        localStorage.removeItem('rideledger_offline_user');
-
-        if (data.session?.user) {
-          setUser(mapSupabaseUser(data.session.user));
-          return { error: null };
-        } else if (data.user) {
-          // Attempt immediate sign in in case email confirmation is auto-confirmed
-          const { data: signData, error: signError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-          if (!signError && signData.user) {
-            setUser(mapSupabaseUser(signData.user));
-            return { error: null };
-          }
-          return { error: 'Account created! Please check your email to confirm, then sign in.' };
-        }
-        return { error: null };
-      } catch (err: any) {
-        return { error: err.message || 'Sign up failed' };
-      }
-    } else {
-      const newUser: AuthUser = {
-        id: generateUUID(),
-        email,
-        fullName,
-      };
-      localStorage.setItem('rideledger_offline_user', JSON.stringify(newUser));
-      setUser(newUser);
-      return { error: null };
-    }
-  };
-
-  const signIn = async (email: string, password: string) => {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) return { error: error.message };
-        if (data.user) {
-          localStorage.removeItem('rideledger_offline_user');
-          setUser(mapSupabaseUser(data.user));
-        }
-        return { error: null };
-      } catch (err: any) {
-        return { error: err.message || 'Sign in failed' };
-      }
-    } else {
-      const newUser: AuthUser = {
-        id: generateUUID(),
-        email,
-        fullName: email.split('@')[0],
-      };
-      localStorage.setItem('rideledger_offline_user', JSON.stringify(newUser));
-      setUser(newUser);
-      return { error: null };
-    }
-  };
-
-  const enableGuestMode = () => {
-    const guest: AuthUser = {
-      id: generateUUID(),
-      email: 'guest@rideledger.local',
-      fullName: 'Guest Rider',
-    };
-    localStorage.setItem('rideledger_offline_user', JSON.stringify(guest));
-    setUser(guest);
-  };
-
-  const signOut = async () => {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await supabase.auth.signOut();
-      } catch {}
-    }
-    localStorage.removeItem('rideledger_offline_user');
-    setUser(null);
-  };
-
-  const resetPassword = async (email: string) => {
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { error } = await supabase.auth.resetPasswordForEmail(email);
-        if (error) return { error: error.message };
-        return { error: null };
-      } catch (err: any) {
-        return { error: err.message || 'Password reset failed' };
-      }
-    } else {
-      return { error: null };
-    }
-  };
+  const signUp = async () => ({ error: null });
+  const signIn = async () => ({ error: null });
+  const signOut = async () => {};
+  const resetPassword = async () => ({ error: null });
+  const enableGuestMode = () => {};
 
   return (
     <AuthContext.Provider
@@ -220,5 +117,3 @@ export function useAuth() {
   if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 }
-
-

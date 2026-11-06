@@ -13,14 +13,13 @@ import {
   Download,
   Database,
   CheckCircle2,
-  LogOut,
 } from 'lucide-react';
 import { getDB } from '@/lib/offline/db';
 
 export const SettingsPage: React.FC = () => {
   const { currentVehicle, updateVehicle, settings, updateSettings } = useVehicle();
   const { theme, setTheme } = useTheme();
-  const { user, isConfigured, signOut } = useAuth();
+  const { isConfigured } = useAuth();
 
   // Vehicle form
   const [name, setName] = useState<string>(currentVehicle?.name || 'TVS Jupiter 110');
@@ -262,18 +261,10 @@ export const SettingsPage: React.FC = () => {
             Export Database Backup (.JSON)
           </Button>
 
-          {user && (
-            <Button
-              type="button"
-              onClick={signOut}
-              variant="ghost"
-              size="sm"
-              className="text-xs text-danger hover:text-danger hover:bg-danger/10 gap-1.5"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign Out ({user.email})
-            </Button>
-          )}
+          <div className="flex items-center gap-1.5 text-xs text-forest dark:text-forest-light font-semibold">
+            <CheckCircle2 className="w-4 h-4" />
+            <span>Multi-Device Cloud Sync Enabled</span>
+          </div>
         </div>
       </div>
     </div>

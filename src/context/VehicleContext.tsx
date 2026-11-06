@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import {
   Vehicle,
@@ -11,6 +11,7 @@ import {
   OdometerEntry,
 } from '@/types/database';
 import {
+  SINGLE_USER_ID,
   fetchUserVehicles,
   createVehicleRecord,
   updateVehicleRecord,
@@ -121,6 +122,12 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [currentVehicle, setCurrentVehicle] = useState<Vehicle | null>(null);
+  const currentVehicleRef = useRef<Vehicle | null>(null);
+
+  useEffect(() => {
+    currentVehicleRef.current = currentVehicle;
+  }, [currentVehicle]);
+
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -131,44 +138,44 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [odometerEntries, setOdometerEntries] = useState<OdometerEntry[]>([]);
 
-  // 1. Load Vehicles & Settings
+  // 1. Load Vehicles & Settings directly from Supabase
   const loadVehicles = useCallback(async () => {
-    if (!user) {
-      setVehicles([]);
-      setCurrentVehicle(null);
-      setLoading(false);
-      return;
-    }
-
     try {
-      const userSettings = await fetchUserSettings(user.id);
+      const activeUserId = user?.id || SINGLE_USER_ID;
+      const userSettings = await fetchUserSettings(activeUserId);
       setSettings(userSettings);
 
-      const userVehicles = await fetchUserVehicles(user.id);
+      const userVehicles = await fetchUserVehicles(activeUserId);
       setVehicles(userVehicles);
 
       if (userVehicles.length > 0) {
         // Select first vehicle by default
-        setCurrentVehicle((prev) => prev || userVehicles[0]);
+        setCurrentVehicle((prev) => {
+          const chosen = prev || userVehicles[0];
+          currentVehicleRef.current = chosen;
+          return chosen;
+        });
       } else {
         setCurrentVehicle(null);
+        currentVehicleRef.current = null;
       }
     } finally {
       setLoading(false);
     }
   }, [user]);
 
-  // 2. Load all records for current vehicle
+  // 2. Load all records for current vehicle directly from Supabase
   const refreshAllData = useCallback(async () => {
-    if (!currentVehicle || !user) return;
+    const activeVehicle = currentVehicle || currentVehicleRef.current;
+    if (!activeVehicle) return;
 
     const [t, f, s, e, r, o] = await Promise.all([
-      fetchTrips(currentVehicle.id),
-      fetchFuelEntries(currentVehicle.id),
-      fetchServiceRecords(currentVehicle.id),
-      fetchExpenses(currentVehicle.id),
-      fetchReminders(currentVehicle.id),
-      fetchOdometerEntries(currentVehicle.id),
+      fetchTrips(activeVehicle.id),
+      fetchFuelEntries(activeVehicle.id),
+      fetchServiceRecords(activeVehicle.id),
+      fetchExpenses(activeVehicle.id),
+      fetchReminders(activeVehicle.id),
+      fetchOdometerEntries(activeVehicle.id),
     ]);
 
     setTrips(t);
@@ -177,7 +184,7 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setExpenses(e);
     setReminders(r);
     setOdometerEntries(o);
-  }, [currentVehicle, user]);
+  }, [currentVehicle]);
 
   useEffect(() => {
     loadVehicles();
@@ -288,16 +295,20 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const createVehicle = async (data: Omit<Vehicle, 'id' | 'created_at' | 'updated_at'>) => {
-    if (!user) throw new Error('User not authenticated');
+    const activeUserId = user?.id || SINGLE_USER_ID;
     const newVehicle: Vehicle = {
       ...data,
       id: generateUUID(),
-      user_id: user.id,
+      user_id: activeUserId,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
     const created = await createVehicleRecord(newVehicle);
-    setVehicles((prev) => [...prev, created]);
+    currentVehicleRef.current = created;
+    setVehicles((prev) => {
+      const exists = prev.some((v) => v.id === created.id);
+      return exists ? prev : [...prev, created];
+    });
     setCurrentVehicle(created);
     await refreshAllData();
     return created;
@@ -312,7 +323,8 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const startRapidoTrip = async (startOdo: number, notes?: string) => {
-    if (!user || !currentVehicle) return { success: false, error: 'Vehicle not selected' };
+    const activeVehicle = currentVehicle || currentVehicleRef.current;
+    if (!activeVehicle) return { success: false, error: 'Vehicle not selected' };
     if (activeTrip) return { success: false, error: 'Another trip is already active. Please end it first.' };
 
     if (startOdo < currentOdometer) {
@@ -324,8 +336,8 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const newTrip: Trip = {
       id: generateUUID(),
-      user_id: user.id,
-      vehicle_id: currentVehicle.id,
+      user_id: user?.id || SINGLE_USER_ID,
+      vehicle_id: activeVehicle.id,
       trip_type: 'rapido',
       status: 'active',
       start_odometer: startOdo,
@@ -393,7 +405,8 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
     notes?: string,
     date?: string
   ) => {
-    if (!user || !currentVehicle) return { success: false, error: 'Vehicle not selected' };
+    const activeVehicle = currentVehicle || currentVehicleRef.current;
+    if (!activeVehicle) return { success: false, error: 'Vehicle not selected' };
 
     if (endOdo < startOdo) {
       return {
@@ -406,8 +419,8 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const trip: Trip = {
       id: generateUUID(),
-      user_id: user.id,
-      vehicle_id: currentVehicle.id,
+      user_id: user?.id || SINGLE_USER_ID,
+      vehicle_id: activeVehicle.id,
       trip_type: 'personal',
       status: 'completed',
       start_odometer: startOdo,
@@ -440,12 +453,14 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
     notes?: string,
     dateTime?: string
   ) => {
-    if (!user || !currentVehicle) return { success: false, error: 'Vehicle not selected' };
+    const activeVehicle = currentVehicle || currentVehicleRef.current;
+    if (!activeVehicle) return { success: false, error: 'Vehicle not selected' };
 
-    if (odometer < currentOdometer) {
+    const effectiveOdo = Math.max(activeVehicle.initial_odometer, currentOdometer);
+    if (odometer < effectiveOdo) {
       return {
         success: false,
-        error: `Fuel odometer (${odometer} km) is lower than current odometer (${currentOdometer} km)`,
+        error: `Fuel odometer (${odometer} km) is lower than current odometer (${effectiveOdo} km)`,
       };
     }
 
@@ -453,8 +468,8 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const entry: FuelEntry = {
       id: generateUUID(),
-      user_id: user.id,
-      vehicle_id: currentVehicle.id,
+      user_id: user?.id || SINGLE_USER_ID,
+      vehicle_id: activeVehicle.id,
       odometer_entry_id: null,
       recorded_at: recordedAt,
       odometer,
@@ -474,8 +489,9 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const deleteFuel = async (id: string) => {
-    if (!currentVehicle || !user) return;
-    await deleteFuelEntryRecord(id, currentVehicle.id, user.id);
+    const activeVehicle = currentVehicle || currentVehicleRef.current;
+    if (!activeVehicle) return;
+    await deleteFuelEntryRecord(id, activeVehicle.id, user?.id || SINGLE_USER_ID);
     await refreshAllData();
   };
 
@@ -485,12 +501,13 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const addService = async (data: Omit<ServiceRecord, 'id' | 'user_id' | 'vehicle_id' | 'created_at' | 'updated_at'>) => {
-    if (!user || !currentVehicle) return;
+    const activeVehicle = currentVehicle || currentVehicleRef.current;
+    if (!activeVehicle) return;
     const record: ServiceRecord = {
       ...data,
       id: generateUUID(),
-      user_id: user.id,
-      vehicle_id: currentVehicle.id,
+      user_id: user?.id || SINGLE_USER_ID,
+      vehicle_id: activeVehicle.id,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -504,12 +521,13 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const addExpense = async (data: Omit<Expense, 'id' | 'user_id' | 'vehicle_id' | 'created_at' | 'updated_at'>) => {
-    if (!user || !currentVehicle) return;
+    const activeVehicle = currentVehicle || currentVehicleRef.current;
+    if (!activeVehicle) return;
     const exp: Expense = {
       ...data,
       id: generateUUID(),
-      user_id: user.id,
-      vehicle_id: currentVehicle.id,
+      user_id: user?.id || SINGLE_USER_ID,
+      vehicle_id: activeVehicle.id,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -523,12 +541,13 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const addReminder = async (data: Omit<Reminder, 'id' | 'user_id' | 'vehicle_id' | 'created_at' | 'updated_at'>) => {
-    if (!user || !currentVehicle) return;
+    const activeVehicle = currentVehicle || currentVehicleRef.current;
+    if (!activeVehicle) return;
     const rem: Reminder = {
       ...data,
       id: generateUUID(),
-      user_id: user.id,
-      vehicle_id: currentVehicle.id,
+      user_id: user?.id || SINGLE_USER_ID,
+      vehicle_id: activeVehicle.id,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { SyncProvider } from './context/SyncContext';
 import { PWAProvider } from './context/PWAContext';
@@ -15,7 +15,6 @@ import { FuelPage } from './pages/FuelPage';
 import { ServicePage } from './pages/ServicePage';
 import { InsightsPage } from './pages/InsightsPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { AuthPage } from './pages/AuthPage';
 
 // Modals
 import { StartRapidoModal } from './components/trips/StartRapidoModal';
@@ -26,11 +25,9 @@ import { AddServiceModal } from './components/service/AddServiceModal';
 import { AddReminderModal } from './components/service/AddReminderModal';
 import { AddExpenseModal } from './components/insights/AddExpenseModal';
 import { OnboardingModal } from './components/onboarding/OnboardingModal';
-import { AuthModal } from './components/auth/AuthModal';
 
 const MainAppContent: React.FC = () => {
-  const { user, enableGuestMode } = useAuth();
-  const { needsOnboarding, loading } = useVehicle();
+  const { needsOnboarding, loading, refreshAllData } = useVehicle();
 
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
 
@@ -42,7 +39,6 @@ const MainAppContent: React.FC = () => {
   const [addServiceOpen, setAddServiceOpen] = useState<boolean>(false);
   const [addReminderOpen, setAddReminderOpen] = useState<boolean>(false);
   const [addExpenseOpen, setAddExpenseOpen] = useState<boolean>(false);
-  const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
 
   if (loading) {
     return (
@@ -51,15 +47,10 @@ const MainAppContent: React.FC = () => {
           RL
         </div>
         <p className="mt-4 text-xs font-semibold text-text-secondary-light dark:text-text-secondary-dark tracking-wide uppercase">
-          Loading RideLedger...
+          Connecting to Cloud Database...
         </p>
       </div>
     );
-  }
-
-  // If user is not authenticated, prompt to Sign Up / Sign In
-  if (!user) {
-    return <AuthPage onContinueOffline={enableGuestMode} />;
   }
 
   return (
@@ -72,7 +63,7 @@ const MainAppContent: React.FC = () => {
         {/* Header */}
         <Header
           onOpenSettings={() => setCurrentTab('settings')}
-          onOpenAuth={() => setAuthModalOpen(true)}
+          onRefresh={refreshAllData}
         />
 
         {/* Content Container */}
@@ -122,10 +113,9 @@ const MainAppContent: React.FC = () => {
       <AddServiceModal isOpen={addServiceOpen} onClose={() => setAddServiceOpen(false)} />
       <AddReminderModal isOpen={addReminderOpen} onClose={() => setAddReminderOpen(false)} />
       <AddExpenseModal isOpen={addExpenseOpen} onClose={() => setAddExpenseOpen(false)} />
-      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
 
-      {/* Onboarding Wizard when vehicle list is empty */}
-      <OnboardingModal isOpen={needsOnboarding} onComplete={() => {}} />
+      {/* Onboarding Wizard when database has no vehicle records yet */}
+      <OnboardingModal isOpen={needsOnboarding} onComplete={() => refreshAllData()} />
     </div>
   );
 };
@@ -145,4 +135,3 @@ export default function App() {
     </ThemeProvider>
   );
 }
-

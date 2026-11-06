@@ -1,6 +1,5 @@
 import React from 'react';
 import { useVehicle } from '@/context/VehicleContext';
-import { useAuth } from '@/context/AuthContext';
 import { formatDistance } from '@/lib/utils/formatters';
 import { Settings, Gauge, Wifi, WifiOff, RefreshCw, Download } from 'lucide-react';
 import { useSync } from '@/context/SyncContext';
@@ -9,12 +8,11 @@ import { Button } from '@/components/ui/button';
 
 interface HeaderProps {
   onOpenSettings: () => void;
-  onOpenAuth: () => void;
+  onRefresh?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenAuth }) => {
-  const { currentVehicle, currentOdometer } = useVehicle();
-  const { user } = useAuth();
+export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onRefresh }) => {
+  const { currentVehicle, currentOdometer, refreshAllData } = useVehicle();
   const { isOnline, pendingCount, isSyncing, triggerSync } = useSync();
   const { isInstallable, isStandalone, promptInstall } = usePWA();
 
@@ -25,22 +23,27 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenAuth }) =>
     return 'Good evening';
   };
 
+  const handleRefresh = async () => {
+    if (onRefresh) onRefresh();
+    else await refreshAllData();
+  };
+
   return (
     <header className="sticky top-0 z-30 w-full bg-surface-light/90 dark:bg-surface-dark/90 backdrop-blur-md border-b border-border-light dark:border-border-dark px-4 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
         {/* Left: Greeting & Vehicle */}
         <div className="flex items-center gap-3">
           <button
-            onClick={onOpenAuth}
-            className="w-9 h-9 rounded-xl bg-forest/10 dark:bg-forest/20 flex items-center justify-center text-forest dark:text-forest-light font-bold text-base shadow-inner hover:bg-forest/20 transition-colors"
-            title="User Profile / Sign In"
+            onClick={handleRefresh}
+            className="w-9 h-9 rounded-xl bg-forest/10 dark:bg-forest/20 flex items-center justify-center text-forest dark:text-forest-light font-bold text-base shadow-inner hover:bg-forest/20 transition-transform active:scale-95"
+            title="Reload latest data from Supabase database"
           >
             RL
           </button>
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-xs text-text-secondary-light dark:text-text-secondary-dark font-medium">
-                {getGreeting()}{user?.fullName ? `, ${user.fullName.split(' ')[0]}` : ''}
+                {getGreeting()}, Rider
               </span>
             </div>
             <h1 className="text-sm sm:text-base font-bold text-text-primary-light dark:text-text-primary-dark tracking-tight leading-none">
@@ -62,10 +65,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenAuth }) =>
             onClick={triggerSync}
             title={
               !isOnline
-                ? 'Offline mode (Changes saved locally)'
+                ? 'Offline mode'
                 : pendingCount > 0
-                ? `${pendingCount} changes waiting to sync. Click to sync now.`
-                : 'All changes synced'
+                ? `${pendingCount} changes syncing to cloud`
+                : 'Cloud Database Connected'
             }
             className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border transition-colors bg-surface-light dark:bg-surface-dark"
           >
@@ -79,38 +82,35 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenAuth }) =>
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 <span className="hidden sm:inline">Syncing</span>
               </span>
-            ) : pendingCount > 0 ? (
-              <span className="flex items-center gap-1 text-warning">
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>{pendingCount}</span>
-              </span>
             ) : (
               <span className="flex items-center gap-1 text-forest">
                 <Wifi className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Cloud Active</span>
               </span>
             )}
           </button>
 
-          {/* Install PWA Button if available */}
+          {/* Install App button if PWA installable and not in standalone */}
           {isInstallable && !isStandalone && (
             <Button
               onClick={promptInstall}
-              variant="secondary"
+              variant="outline"
               size="sm"
-              className="hidden sm:inline-flex gap-1.5 text-xs font-bold bg-forest-light text-forest dark:bg-forest-dark/30 dark:text-forest-light"
+              className="gap-1.5 text-xs font-semibold text-forest border-forest/30 hover:bg-forest/10"
+              title="Install RideLedger as native app"
             >
               <Download className="w-3.5 h-3.5" />
-              Install App
+              <span className="hidden sm:inline">Install App</span>
             </Button>
           )}
 
           {/* Settings button */}
           <button
             onClick={onOpenSettings}
-            className="p-2 rounded-xl text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light dark:hover:text-text-primary-dark hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-            title="Settings & Vehicle Profile"
+            className="p-2 rounded-xl text-text-secondary-light dark:text-text-secondary-dark hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            title="Settings"
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-5 h-5" />
           </button>
         </div>
       </div>
