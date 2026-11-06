@@ -91,3 +91,4 @@ describe('Trip Calculations Engine', () => {
     expect(summary.totalDistanceKm).toBe(70);
   });
 });
+

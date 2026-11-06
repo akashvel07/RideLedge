@@ -79,3 +79,4 @@ export function formatDuration(minutes: number | null | undefined): string {
   }
   return `${mins}m`;
 }
+

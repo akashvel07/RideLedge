@@ -143,3 +143,4 @@ export const PersonalTripModal: React.FC<PersonalTripModalProps> = ({ isOpen, on
     </Modal>
   );
 };
+

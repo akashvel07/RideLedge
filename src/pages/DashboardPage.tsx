@@ -473,13 +473,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             <span className="text-lg font-black text-forest dark:text-forest-light">
               {fuelCostPerKm && todayTripsSummary.rapido.totalDistanceKm > 0
                 ? formatCurrency(
-                    todayTripsSummary.rapido.totalEarnings -
-                      todayTripsSummary.rapido.totalDistanceKm * fuelCostPerKm -
-                      todayTripsSummary.rapido.totalDistanceKm * 0.5
-                  )
+                  todayTripsSummary.rapido.totalEarnings -
+                  todayTripsSummary.rapido.totalDistanceKm * fuelCostPerKm -
+                  todayTripsSummary.rapido.totalDistanceKm * 0.5
+                )
                 : todayTripsSummary.rapido.totalEarnings > 0
-                ? formatCurrency(todayTripsSummary.rapido.totalEarnings)
-                : '₹0.00'}
+                  ? formatCurrency(todayTripsSummary.rapido.totalEarnings)
+                  : '₹0.00'}
             </span>
             <span className="text-[10px] text-forest/70 block">
               Estimated Net
@@ -502,8 +502,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               serviceStatus.status === 'overdue'
                 ? 'danger'
                 : serviceStatus.status === 'due_soon'
-                ? 'warning'
-                : 'forest'
+                  ? 'warning'
+                  : 'forest'
             }
             size="sm"
           >
@@ -555,17 +555,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <div key={act.id} className="py-2.5 flex items-center justify-between text-xs">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                      act.type === 'rapido'
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${act.type === 'rapido'
                         ? 'bg-forest/10 text-forest'
                         : act.type === 'personal'
-                        ? 'bg-personal/10 text-personal'
-                        : act.type === 'fuel'
-                        ? 'bg-fuel/15 text-fuel-dark'
-                        : act.type === 'service'
-                        ? 'bg-warning/15 text-warning'
-                        : 'bg-black/5 text-text-secondary-light'
-                    }`}
+                          ? 'bg-personal/10 text-personal'
+                          : act.type === 'fuel'
+                            ? 'bg-fuel/15 text-fuel-dark'
+                            : act.type === 'service'
+                              ? 'bg-warning/15 text-warning'
+                              : 'bg-black/5 text-text-secondary-light'
+                      }`}
                   >
                     {act.type === 'rapido' ? (
                       <TrendingUp className="w-4 h-4" />
@@ -591,9 +590,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
                 {act.amount && (
                   <span
-                    className={`font-bold ${
-                      act.amount.startsWith('+') ? 'text-forest' : 'text-text-secondary-light'
-                    }`}
+                    className={`font-bold ${act.amount.startsWith('+') ? 'text-forest' : 'text-text-secondary-light'
+                      }`}
                   >
                     {act.amount}
                   </span>

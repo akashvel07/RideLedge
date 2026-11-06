@@ -123,3 +123,4 @@ Builds the static application and service worker into `dist/`.
 2. Open the URL in Google Chrome on your Android smartphone.
 3. Tap the Chrome menu (three dots) -> tap **"Add to Home screen"** or **"Install app"**.
 4. RideLedger launches full screen with an app icon and offline caching enabled.
+

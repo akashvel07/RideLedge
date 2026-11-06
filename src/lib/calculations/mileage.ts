@@ -170,3 +170,4 @@ export function calculateFuelCostPerKm(
   }
   return Number((fuelPricePerLitre / mileageKmpl).toFixed(2));
 }
+

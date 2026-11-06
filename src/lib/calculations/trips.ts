@@ -120,3 +120,4 @@ export function aggregateTrips(trips: Trip[]): AggregatedTripsSummary {
     totalDistanceKm: Number((rapidoDist + personalDist).toFixed(1)),
   };
 }
+

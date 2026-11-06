@@ -60,3 +60,4 @@ export async function processSyncQueue(): Promise<{ synced: number; failed: numb
 
   return { synced, failed };
 }
+

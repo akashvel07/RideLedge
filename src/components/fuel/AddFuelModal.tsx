@@ -240,3 +240,4 @@ export const AddFuelModal: React.FC<AddFuelModalProps> = ({ isOpen, onClose }) =
     </Modal>
   );
 };
+

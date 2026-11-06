@@ -214,3 +214,4 @@ export const EndRapidoModal: React.FC<EndRapidoModalProps> = ({ isOpen, onClose 
     </Modal>
   );
 };
+

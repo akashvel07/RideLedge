@@ -117,3 +117,4 @@ export const StartRapidoModal: React.FC<StartRapidoModalProps> = ({ isOpen, onCl
     </Modal>
   );
 };
+

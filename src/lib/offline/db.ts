@@ -107,3 +107,4 @@ export function getDB() {
   }
   return dbPromise;
 }
+

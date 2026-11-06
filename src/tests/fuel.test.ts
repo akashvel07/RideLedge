@@ -61,3 +61,4 @@ describe('Fuel Summary & Validation Engine', () => {
     expect(check2.hasDiscrepancy).toBe(true);
   });
 });
+

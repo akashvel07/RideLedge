@@ -71,3 +71,4 @@ describe('Rapido Profitability Engine', () => {
     expect(result.estimatedNetEarnings).toBeNull();
   });
 });
+

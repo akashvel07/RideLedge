@@ -127,11 +127,10 @@ export const AddServiceModal: React.FC<AddServiceModalProps> = ({ isOpen, onClos
                 key={cat}
                 type="button"
                 onClick={() => setCategory(cat)}
-                className={`px-2.5 py-2 rounded-lg text-xs font-medium transition-all text-center ${
-                  category === cat
+                className={`px-2.5 py-2 rounded-lg text-xs font-medium transition-all text-center ${category === cat
                     ? 'bg-forest text-white font-semibold shadow-sm'
                     : 'bg-black/5 dark:bg-white/5 text-text-secondary-light dark:text-text-secondary-dark hover:text-text-primary-light'
-                }`}
+                  }`}
               >
                 {cat}
               </button>

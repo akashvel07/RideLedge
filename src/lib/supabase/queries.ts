@@ -627,3 +627,4 @@ export async function saveUserSettings(settings: UserSettings): Promise<void> {
     await addToSyncQueue({ table: 'user_settings', operation: 'UPDATE', record: settings });
   }
 }
+
