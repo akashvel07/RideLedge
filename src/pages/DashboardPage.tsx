@@ -3,6 +3,7 @@ import { useVehicle } from '@/context/VehicleContext';
 import { formatCurrency, formatDistance, formatMileage, formatDate, formatDateTime } from '@/lib/utils/formatters';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { InstallPromptBanner } from '@/components/common/InstallPromptBanner';
 import {
   Play,
   Square,
@@ -120,6 +121,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   return (
     <div className="space-y-5 pb-8 animate-in fade-in">
+      {/* 0. PWA INSTALL BANNER */}
+      <InstallPromptBanner />
+
       {/* 1. ACTIVE RAPIDO SESSION BANNER */}
       {activeTrip && (
         <div className="p-4 rounded-2xl bg-forest text-white shadow-lg shadow-forest/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-pulse">

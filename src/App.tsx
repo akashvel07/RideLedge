@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { SyncProvider } from './context/SyncContext';
+import { PWAProvider } from './context/PWAContext';
 import { VehicleProvider, useVehicle } from './context/VehicleContext';
 import { Header } from './components/common/Header';
 import { BottomNav, NavTab } from './components/common/BottomNav';
@@ -127,9 +128,11 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <SyncProvider>
-          <VehicleProvider>
-            <MainAppContent />
-          </VehicleProvider>
+          <PWAProvider>
+            <VehicleProvider>
+              <MainAppContent />
+            </VehicleProvider>
+          </PWAProvider>
         </SyncProvider>
       </AuthProvider>
     </ThemeProvider>

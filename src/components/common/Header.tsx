@@ -2,8 +2,10 @@ import React from 'react';
 import { useVehicle } from '@/context/VehicleContext';
 import { useAuth } from '@/context/AuthContext';
 import { formatDistance } from '@/lib/utils/formatters';
-import { Settings, Gauge, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { Settings, Gauge, Wifi, WifiOff, RefreshCw, Download } from 'lucide-react';
 import { useSync } from '@/context/SyncContext';
+import { usePWA } from '@/context/PWAContext';
+import { Button } from '@/components/ui/button';
 
 interface HeaderProps {
   onOpenSettings: () => void;
@@ -14,6 +16,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenAuth }) =>
   const { currentVehicle, currentOdometer } = useVehicle();
   const { user } = useAuth();
   const { isOnline, pendingCount, isSyncing, triggerSync } = useSync();
+  const { isInstallable, isStandalone, promptInstall } = usePWA();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -87,6 +90,19 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenAuth }) =>
               </span>
             )}
           </button>
+
+          {/* Install PWA Button if available */}
+          {isInstallable && !isStandalone && (
+            <Button
+              onClick={promptInstall}
+              variant="secondary"
+              size="sm"
+              className="hidden sm:inline-flex gap-1.5 text-xs font-bold bg-forest-light text-forest dark:bg-forest-dark/30 dark:text-forest-light"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Install App
+            </Button>
+          )}
 
           {/* Settings button */}
           <button

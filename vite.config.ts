@@ -8,33 +8,39 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'icons/*.png'],
+      devOptions: {
+        enabled: true,
+      },
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'icons/*.png'],
       manifest: {
-        name: 'RideLedger - Bike & Rapido Tracker',
+        name: 'RideLedger – Personal Bike & Rapido Tracker',
         short_name: 'RideLedger',
-        description: 'Track real-world mileage, fuel costs, Rapido earnings, and vehicle maintenance.',
+        description: 'Track real-world mileage, fuel costs, Rapido earnings, and TVS Jupiter maintenance.',
         theme_color: '#176B45',
         background_color: '#101713',
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'portrait-primary',
         scope: '/',
         start_url: '/',
+        categories: ['finance', 'productivity', 'travel'],
         icons: [
           {
             src: '/icons/icon-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: '/icons/icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: '/icons/icon-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            src: '/icons/icon-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       },
@@ -62,4 +68,3 @@ export default defineConfig({
     }
   }
 });
-
