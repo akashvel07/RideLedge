@@ -1,4 +1,5 @@
 import { FuelEntry, MileageCycle } from '@/types/database';
+import { generateUUID } from '@/lib/utils/uuid';
 
 export interface MileageCalculationResult {
   cycles: MileageCycle[];
@@ -78,7 +79,7 @@ export function calculateMileageCycles(
         const isReasonable = isValid && kmpl >= 5 && kmpl <= 95;
 
         const cycle: MileageCycle = {
-          id: `${referenceFill.id}_${entry.id}`,
+          id: generateUUID(),
           user_id: userId,
           vehicle_id: vehicleId,
           start_fuel_entry_id: referenceFill.id,

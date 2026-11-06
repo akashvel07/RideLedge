@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { SyncProvider } from './context/SyncContext';
 import { PWAProvider } from './context/PWAContext';
@@ -15,6 +15,7 @@ import { FuelPage } from './pages/FuelPage';
 import { ServicePage } from './pages/ServicePage';
 import { InsightsPage } from './pages/InsightsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { AuthPage } from './pages/AuthPage';
 
 // Modals
 import { StartRapidoModal } from './components/trips/StartRapidoModal';
@@ -28,6 +29,7 @@ import { OnboardingModal } from './components/onboarding/OnboardingModal';
 import { AuthModal } from './components/auth/AuthModal';
 
 const MainAppContent: React.FC = () => {
+  const { user, enableGuestMode } = useAuth();
   const { needsOnboarding, loading } = useVehicle();
 
   const [currentTab, setCurrentTab] = useState<NavTab>('dashboard');
@@ -53,6 +55,11 @@ const MainAppContent: React.FC = () => {
         </p>
       </div>
     );
+  }
+
+  // If user is not authenticated, prompt to Sign Up / Sign In
+  if (!user) {
+    return <AuthPage onContinueOffline={enableGuestMode} />;
   }
 
   return (

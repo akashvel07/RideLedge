@@ -41,6 +41,7 @@ import { calculateFuelSummary, MonthlyFuelSummary } from '@/lib/calculations/fue
 import { calculateServiceStatus, ServiceStatusResult } from '@/lib/calculations/service';
 import { aggregateAllExpenses, CategoryExpense } from '@/lib/calculations/expenses';
 import { calculateProfitability, ProfitabilityResult } from '@/lib/calculations/profitability';
+import { generateUUID } from '@/lib/utils/uuid';
 import { isSameDay, parseISO } from 'date-fns';
 
 interface VehicleContextType {
@@ -290,7 +291,7 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!user) throw new Error('User not authenticated');
     const newVehicle: Vehicle = {
       ...data,
-      id: `v_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id: generateUUID(),
       user_id: user.id,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -322,7 +323,7 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     const newTrip: Trip = {
-      id: `trip_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id: generateUUID(),
       user_id: user.id,
       vehicle_id: currentVehicle.id,
       trip_type: 'rapido',
@@ -404,7 +405,7 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const now = date ? new Date(date).toISOString() : new Date().toISOString();
 
     const trip: Trip = {
-      id: `trip_p_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id: generateUUID(),
       user_id: user.id,
       vehicle_id: currentVehicle.id,
       trip_type: 'personal',
@@ -451,7 +452,7 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const recordedAt = dateTime ? new Date(dateTime).toISOString() : new Date().toISOString();
 
     const entry: FuelEntry = {
-      id: `fuel_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id: generateUUID(),
       user_id: user.id,
       vehicle_id: currentVehicle.id,
       odometer_entry_id: null,
@@ -487,7 +488,7 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!user || !currentVehicle) return;
     const record: ServiceRecord = {
       ...data,
-      id: `srv_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id: generateUUID(),
       user_id: user.id,
       vehicle_id: currentVehicle.id,
       created_at: new Date().toISOString(),
@@ -506,7 +507,7 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!user || !currentVehicle) return;
     const exp: Expense = {
       ...data,
-      id: `exp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id: generateUUID(),
       user_id: user.id,
       vehicle_id: currentVehicle.id,
       created_at: new Date().toISOString(),
@@ -525,7 +526,7 @@ export const VehicleProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!user || !currentVehicle) return;
     const rem: Reminder = {
       ...data,
-      id: `rem_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      id: generateUUID(),
       user_id: user.id,
       vehicle_id: currentVehicle.id,
       created_at: new Date().toISOString(),

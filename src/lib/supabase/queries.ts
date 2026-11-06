@@ -12,6 +12,7 @@ import {
   OdometerEntry,
 } from '@/types/database';
 import { calculateMileageCycles } from '../calculations/mileage';
+import { generateUUID } from '../utils/uuid';
 
 // -------------------------------------------------------------
 // 1. VEHICLES
@@ -50,7 +51,7 @@ export async function createVehicleRecord(vehicle: Vehicle): Promise<Vehicle> {
 
   // Also create initial odometer entry
   const initialOdo: OdometerEntry = {
-    id: `odo_init_${vehicle.id}`,
+    id: generateUUID(),
     user_id: vehicle.user_id,
     vehicle_id: vehicle.id,
     reading: vehicle.initial_odometer,
@@ -189,7 +190,7 @@ export async function createTripRecord(trip: Trip): Promise<Trip> {
 
   // Record starting odometer entry
   const odoEntry: OdometerEntry = {
-    id: `odo_trip_start_${trip.id}`,
+    id: generateUUID(),
     user_id: trip.user_id,
     vehicle_id: trip.vehicle_id,
     reading: trip.start_odometer,
@@ -229,7 +230,7 @@ export async function updateTripRecord(tripId: string, updates: Partial<Trip>): 
   // If ending odometer is provided, also record odometer entry
   if (updates.end_odometer !== undefined && updates.end_odometer !== null) {
     const odoEntry: OdometerEntry = {
-      id: `odo_trip_end_${tripId}`,
+      id: generateUUID(),
       user_id: existing.user_id,
       vehicle_id: existing.vehicle_id,
       reading: updates.end_odometer,
@@ -306,7 +307,7 @@ export async function createFuelEntryRecord(entry: FuelEntry): Promise<FuelEntry
 
   // Record odometer entry
   const odoEntry: OdometerEntry = {
-    id: `odo_fuel_${entry.id}`,
+    id: generateUUID(),
     user_id: entry.user_id,
     vehicle_id: entry.vehicle_id,
     reading: entry.odometer,
@@ -401,7 +402,7 @@ export async function createServiceRecord(record: ServiceRecord): Promise<Servic
 
   // Record odometer entry
   const odoEntry: OdometerEntry = {
-    id: `odo_srv_${record.id}`,
+    id: generateUUID(),
     user_id: record.user_id,
     vehicle_id: record.vehicle_id,
     reading: record.odometer,

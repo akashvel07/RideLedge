@@ -29,6 +29,13 @@ export async function processSyncQueue(): Promise<{ synced: number; failed: numb
     return { synced: 0, failed: 0 };
   }
 
+  // Ensure active session exists before syncing to Supabase RLS
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) {
+    return { synced: 0, failed: 0 };
+  }
+
+  const currentUserId = session.user.id;
   const db = await getDB();
   const queue = await db.getAll('sync_queue');
   let synced = 0;
@@ -36,6 +43,11 @@ export async function processSyncQueue(): Promise<{ synced: number; failed: numb
 
   for (const item of queue) {
     try {
+      // Ensure record belongs to current logged-in user
+      if (item.record && 'user_id' in item.record) {
+        item.record.user_id = currentUserId;
+      }
+
       if (item.operation === 'INSERT') {
         const { error } = await supabase.from(item.table).insert(item.record);
         if (error) throw error;

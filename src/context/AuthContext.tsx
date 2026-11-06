@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
+import { generateUUID } from '@/lib/utils/uuid';
 
 export interface AuthUser {
   id: string;
@@ -16,6 +17,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
+  enableGuestMode: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,10 +34,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (session?.user) {
             setUser(mapSupabaseUser(session.user));
           } else {
-            // Check for local stored guest/offline session
+            // Check for locally stored guest session
             const savedUser = localStorage.getItem('rideledger_offline_user');
             if (savedUser) {
               setUser(JSON.parse(savedUser));
+            } else {
+              setUser(null);
             }
           }
 
@@ -43,7 +47,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (session?.user) {
               setUser(mapSupabaseUser(session.user));
             } else {
-              setUser(null);
+              const savedUser = localStorage.getItem('rideledger_offline_user');
+              if (savedUser) {
+                setUser(JSON.parse(savedUser));
+              } else {
+                setUser(null);
+              }
             }
           });
 
@@ -51,10 +60,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             subscription.unsubscribe();
           };
         } catch {
-          // Fallback to local stored session
           const savedUser = localStorage.getItem('rideledger_offline_user');
           if (savedUser) {
             setUser(JSON.parse(savedUser));
+          } else {
+            setUser(null);
           }
         } finally {
           setLoading(false);
@@ -65,14 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (savedUser) {
           setUser(JSON.parse(savedUser));
         } else {
-          // Auto-initialize standard local profile for instant onboarding
-          const defaultUser: AuthUser = {
-            id: 'local_rider_user',
-            email: 'rider@rideledger.local',
-            fullName: 'Rider',
-          };
-          localStorage.setItem('rideledger_offline_user', JSON.stringify(defaultUser));
-          setUser(defaultUser);
+          setUser(null);
         }
         setLoading(false);
       }
@@ -98,17 +101,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           },
         });
         if (error) return { error: error.message };
-        if (data.user) {
-          setUser(mapSupabaseUser(data.user));
+
+        localStorage.removeItem('rideledger_offline_user');
+
+        if (data.session?.user) {
+          setUser(mapSupabaseUser(data.session.user));
+          return { error: null };
+        } else if (data.user) {
+          // Attempt immediate sign in in case email confirmation is auto-confirmed
+          const { data: signData, error: signError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (!signError && signData.user) {
+            setUser(mapSupabaseUser(signData.user));
+            return { error: null };
+          }
+          return { error: 'Account created! Please check your email to confirm, then sign in.' };
         }
         return { error: null };
       } catch (err: any) {
         return { error: err.message || 'Sign up failed' };
       }
     } else {
-      // Local sign up
       const newUser: AuthUser = {
-        id: `user_${Date.now()}`,
+        id: generateUUID(),
         email,
         fullName,
       };
@@ -127,6 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         if (error) return { error: error.message };
         if (data.user) {
+          localStorage.removeItem('rideledger_offline_user');
           setUser(mapSupabaseUser(data.user));
         }
         return { error: null };
@@ -135,7 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } else {
       const newUser: AuthUser = {
-        id: 'local_rider_user',
+        id: generateUUID(),
         email,
         fullName: email.split('@')[0],
       };
@@ -143,6 +161,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(newUser);
       return { error: null };
     }
+  };
+
+  const enableGuestMode = () => {
+    const guest: AuthUser = {
+      id: generateUUID(),
+      email: 'guest@rideledger.local',
+      fullName: 'Guest Rider',
+    };
+    localStorage.setItem('rideledger_offline_user', JSON.stringify(guest));
+    setUser(guest);
   };
 
   const signOut = async () => {
@@ -179,6 +207,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signIn,
         signOut,
         resetPassword,
+        enableGuestMode,
       }}
     >
       {children}
@@ -191,4 +220,5 @@ export function useAuth() {
   if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 }
+
 
