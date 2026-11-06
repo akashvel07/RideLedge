@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #F7F9F7;
+    --surface: #FFFFFF;
+    --border: #E5EAE6;
+    --text-primary: #17231C;
+    --text-secondary: #738078;
+  }
+
+  .dark {
+    --bg-primary: #101713;
+    --surface: #19231D;
+    --border: #2B3930;
+    --text-primary: #F0F5F1;
+    --text-secondary: #A0AEA4;
+  }
+
+  * {
+    border-color: var(--border);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Custom scrollbar for mobile / desktop */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(115, 128, 120, 0.3);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(115, 128, 120, 0.5);
+}
+
+/* Safe area padding support for iOS notch / navigation bar */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
